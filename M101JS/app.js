@@ -1,16 +1,33 @@
-const MongoClient = require('mongodb').MongoClient
-const assert = require('assert')
+const express = require('express'),
+    app = express(),
+    engines = require('consolidate'),
+    MongoClient = require('mongodb').MongoClient,
+    assert = require('assert')
 
-MongoClient.connect('mongodb://localhost/video', function (err, db) {
+app.engine('html', engines.nunjucks)
+app.set('view engine', 'html')
+app.set('views', __dirname + '/views')
+
+MongoClient.connect('mongodb://localhost:27017/video', function (err, db) {
+
     assert.equal(null, err)
+    console.log("Successfully connected to MongoDB.")
 
-    console.log("Sucessfully connected to server")
+    app.get('/', function (req, res) {
 
-    db.collection('movies').find({}).toArray(function (err, docs) {
-        docs.forEach(function (doc) {
-            console.log(doc)
+        db.collection('movies').find({}).toArray(function (err, docs) {
+            res.render('movies', { 'movies': docs })
         })
-        db.close()
+
     })
-    console.log("Called find()")
+
+    app.use(function (req, res) {
+        res.sendStatus(404)
+    })
+
+    const server = app.listen(3000, function () {
+        const port = server.address().port
+        console.log('Express server listening on port %s.', port)
+    })
+
 })
